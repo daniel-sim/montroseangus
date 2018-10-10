@@ -1,106 +1,120 @@
-<div data-section-id="{{ section.id }}" data-section-type="slideshow-section">
+<div
+  data-section-id="{{ section.id }}"
+  data-section-type="slideshow-section"
+  data-align-top="true">
 
   {% if section.blocks.size > 0 %}
     <div class="slideshow-wrapper">
-      <button type="button" class="visually-hidden slideshow__pause" data-id="{{ section.id }}" aria-live="polite">
-        <span class="slideshow__pause-stop">
-          {% include 'icon-pause' %}
-          <span class="icon__fallback-text">{{ 'sections.slideshow.pause_slideshow' | t }}</span>
-        </span>
-        <span class="slideshow__pause-play">
-          {% include 'icon-play' %}
-          <span class="icon__fallback-text">{{ 'sections.slideshow.play_slideshow' | t }}</span>
-        </span>
-      </button>
+      {% if section.settings.autoplay %}
+        <style>
+          .slideshow__slide.slick-active:after {
+            width: 100%;
+            transition-delay: 1500ms;
+            transition-duration: {{ section.settings.autoplay_speed | times: 1000 | minus: 1500 }}ms;
+          }
+        </style>
 
-      <div class="slideshow slideshow--{{ section.settings.slideshow_height }}" id="Slideshow-{{ section.id }}" data-autoplay="{{ section.settings.autoplay }}" data-speed="{{ section.settings.autoplay_speed }}">
+        <button type="button" class="visually-hidden slideshow__pause" data-id="{{ section.id }}" aria-live="polite">
+          <span class="slideshow__pause-stop">
+            {% include 'icon-pause' %}
+            <span class="icon__fallback-text">{{ 'sections.slideshow.pause_slideshow' | t }}</span>
+          </span>
+          <span class="slideshow__pause-play">
+            {% include 'icon-play' %}
+            <span class="icon__fallback-text">{{ 'sections.slideshow.play_slideshow' | t }}</span>
+          </span>
+        </button>
+      {% endif %}
+
+      <div id="Slideshow-{{ section.id }}"
+        class="hero hero--{{ section.settings.section_height }} hero--{{ section.id }} hero--mobile--{{ section.settings.mobile_height }} loading loading--delayed"
+        data-autoplay="{{ section.settings.autoplay }}"
+        data-speed="{{ section.settings.autoplay_speed | times: 1000 }}"
+        data-aos="hero__animation"
+        {% if section.settings.style == 'arrows' %}
+          data-arrows="true"
+        {% endif %}
+        {% if section.settings.style == 'dots' %}
+          data-dots="true"
+        {% endif %}
+        data-slide-count="{{ section.blocks.size }}">
         {% for block in section.blocks %}
-          {%- assign is_background_video = false -%}
-          {% if block.type == 'video' %}
-            {% if block.settings.video_type == 'background' or block.settings.video_type =='background-chrome' %}
-              {%- assign is_background_video = true -%}
-            {% endif %}
-          {% endif %}
 
-          <div class="slideshow__slide slideshow__slide--{{ block.id }}{% if is_background_video %} slideshow__slide--background-video{% endif %}" {{ block.shopify_attributes }}>
-            {% if block.settings.link != blank %}
-              <a href="{{ block.settings.link }}" class="slideshow__link">
+          <div
+            {{ block.shopify_attributes }}
+            class="slideshow__slide slideshow__slide--{{ block.id }}"
+            data-id="{{ block.id }}">
+
+            <style>
+            .slideshow__slide--{{ block.id }} .hero__title {
+              font-size: {{ block.settings.title_size | times: 0.5 }}px;
+            }
+            @media only screen and (min-width: 590px) {
+              .slideshow__slide--{{ block.id }} .hero__title {
+                font-size: {{ block.settings.title_size }}px;
+              }
+            }
+            </style>
+
+            {% if block.settings.image != blank %}
+              <style>
+                .slideshow__image--{{ block.id }} {
+                  background-position: {{ block.settings.focal_point }};
+                }
+              </style>
             {% endif %}
 
-            {% if block.type == 'video' %}
-              {% if block.settings.video_url != blank %}
-                <div class="video-loader"></div>
+            <div
+              class="hero__image slideshow__image--{{ block.id }}{% if block.settings.image != blank %} lazyload{% else %} hero__image--svg{% endif %}"
+              {% if block.settings.image != blank %}
+                data-bgset="{% include 'bgset', image: block.settings.image %}"
+                data-sizes="auto"
+              {% endif %}>
+              {% if block.settings.image == blank %}
+                {{ 'lifestyle-1' | placeholder_svg_tag: 'placeholder-svg' }}
               {% endif %}
-              {% unless block.settings.video_type == 'background' %}
-                <button type="button" class="text-link slideshow__video-control slideshow__video-control--close" data-controls="SlideshowVideo-{{ block.id }}">
-                  {% include 'icon-close' %}
-                  <span class="icon__fallback-text">{{ 'sections.slideshow.close_video' | t }}</span>
-                </button>
-              {% endunless %}
-              {% if block.settings.video_url != blank %}
-                <div id="SlideshowVideo-{{ block.id }}" class="slideshow__video {% if is_background_video %}slideshow__video--background{% endif %} slideshow__video--{{ block.settings.video_type }}"
-                  data-id="{{ block.settings.video_url.id }}"
-                  data-type="{{ block.settings.video_type }}"
-                  data-slideshow="Slideshow-{{ section.id }}"></div>
-              {% endif %}
-            {% endif %}
-
-            {% if block.settings.image == blank %}
-              <div class="slideshow__image js">
-                <div class="placeholder-background">
-                  {% capture current %}{% cycle 1, 2 %}{% endcapture %}
-                  {{ 'lifestyle-' | append: current | placeholder_svg_tag: 'placeholder-svg' }}
-                </div>
-              </div>
-            {% else %}
-              <div class="slideshow__image box ratio-container lazyload{% unless forloop.first == true %} lazypreload{% endunless %} js"
-                   data-bgset="{% include 'bgset', image: block.settings.image %}"
-                   data-sizes="auto"
-                   data-parent-fit="cover"
-                   style="background-position: {{ block.settings.alignment }};{% if forloop.first == true %} background-image: url('{{ block.settings.image | img_url: '300x300' }});{% endif %}">
-              </div>
-            {% endif %}
+            </div>
 
             <noscript>
-              <div class="slideshow__image"{% if block.settings.image %} style="background-image: url('{{ block.settings.image | img_url: '2048x' }}'); background-position: {{ block.settings.alignment }};"{% endif %}>
-                {% if block.settings.image == blank %}
-                  <div class="placeholder-background">
-                    {% capture current %}{% cycle 1, 2 %}{% endcapture %}
-                    {{ 'lifestyle-' | append: current | placeholder_svg_tag: 'placeholder-svg' }}
-                  </div>
-                {% endif %}
+              <div
+                class="hero__image slideshow__image--{{ block.id }}"
+                style="background-image: url({{ block.settings.image | img_url: '1400x' }});">
               </div>
             </noscript>
-            <div class="slideshow__text-wrap{% if block.settings.title != blank or block.settings.subheading != blank %} slideshow__overlay{% endif %}">
-              <div class="slideshow__text-content">
-                <div class="page-width">
+
+            <div class="hero__text-wrap">
+              <div class="page-width">
+                <div class="hero__text-content {{ block.settings.text_align }}">
+
                   {% unless block.settings.title == blank %}
-                    <h2 class="h1 mega-title slideshow__title{% if settings.link != blank %} slideshow__title--has-link{% endif %}{% if section.settings.text_size == 'large' %} mega-title--large{% endif %}">
-                      {{ block.settings.title | escape }}
+                    <h2 class="h1 hero__title">
+                      <div class="animation-cropper"><div class="animation-contents">
+                      {{ block.settings.title | newline_to_br }}
+                      </div></div>
                     </h2>
                   {% endunless %}
-                  {% unless block.settings.subheading == blank %}
-                    <span class="mega-subtitle slideshow__subtitle{% if section.settings.text_size == 'large' %} mega-subtitle--large{% endif %}">
-                      {{ block.settings.subheading | escape }}
-                    </span>
-                  {% endunless %}
-                  {% if block.type == 'video' %}
-                    {% unless block.settings.video_type == 'background' %}
-                      <div class="slideshow__video-control--play-wrapper{% if block.settings.title != blank or block.settings.subheading != blank %} slideshow__video-control--play-wrapper--push{% endif %}">
-                        <button type="button" class="text-link slideshow__video-control slideshow__video-control--play" data-controls="SlideshowVideo-{{ block.id }}">
-                          {% include 'icon-play-video' %}
-                          <span class="icon__fallback-text">{{ 'sections.slideshow.play_video' | t }}</span>
-                        </button>
+                  {% if block.settings.subheading or block.settings.link %}
+                    {% unless block.settings.subheading == blank %}
+                      <div class="hero__subtitle">
+                        <div class="animation-cropper"><div class="animation-contents">
+                          {{ block.settings.subheading | escape }}
+                        </div></div>
                       </div>
                     {% endunless %}
+                    {% if block.settings.link_text != blank %}
+                      <div class="hero__link">
+                        <div class="animation-cropper"><div class="animation-contents">
+                          <a href="{{ block.settings.link }}" class="btn btn--small btn--inverse">
+                            {{ block.settings.link_text }}
+                          </a>
+                        </div></div>
+                      </div>
+                    {% endif %}
                   {% endif %}
+
                 </div>
               </div>
             </div>
-
-            {% if block.settings.link != blank %}
-              </a>
-            {% endif %}
           </div>
         {% endfor %}
       </div>
@@ -109,7 +123,7 @@
 
   {% if section.blocks.size == 0 %}
     <div class="placeholder-noblocks">
-      {{ 'homepage.onboarding.no_content' | t }}
+      {{ 'home_page.onboarding.no_content' | t }}
     </div>
   {% endif %}
 </div>
@@ -117,71 +131,175 @@
 {% schema %}
   {
     "name": "Slideshow",
-    "class": "index-section index-section--flush",
-    "max_blocks": 4,
+    "class": "index-section--hero",
+    "max_blocks": 5,
     "settings": [
+      {
+        "type": "select",
+        "id": "section_height",
+        "label": "Desktop height",
+        "default": "650px",
+        "options": [
+          {
+            "label": "450px",
+            "value": "450px"
+          },
+          {
+            "label": "550px",
+            "value": "550px"
+          },
+          {
+            "label": "650px",
+            "value": "650px"
+          },
+          {
+            "label": "750px",
+            "value": "750px"
+          },
+          {
+            "label": "Full screen",
+            "value": "100vh"
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "id": "mobile_height",
+        "label": "Mobile height",
+        "default": "auto",
+        "options": [
+          {
+            "label": "Auto",
+            "value": "auto"
+          },
+          {
+            "label": "250px",
+            "value": "250px"
+          },
+          {
+            "label": "300px",
+            "value": "300px"
+          },
+          {
+            "label": "400px",
+            "value": "400px"
+          },
+          {
+            "label": "500px",
+            "value": "500px"
+          },
+          {
+            "label": "Full screen",
+            "value": "100vh"
+          }
+        ]
+      },
+      {
+        "type": "select",
+        "id": "style",
+        "label": "Slide navigation style",
+        "default": "minimal",
+        "options": [
+          {
+            "value": "minimal",
+            "label": "Minimal"
+          },
+          {
+            "value": "arrows",
+            "label": "Arrows"
+          },
+          {
+            "value": "dots",
+            "label": "Dots"
+          }
+        ]
+      },
       {
         "type": "checkbox",
         "id": "autoplay",
-        "label": "Auto-rotate slides",
+        "label": "Auto-change slides",
         "default": true
       },
       {
-        "type": "select",
+        "type": "range",
         "id": "autoplay_speed",
-        "label": "Change slides every",
-        "options": [
-          { "value": "5000", "label": "5 seconds" },
-          { "value": "6000", "label": "6 seconds" },
-          { "value": "7000", "label": "7 seconds" },
-          { "value": "8000", "label": "8 seconds" },
-          { "value": "9000", "label": "9 seconds" },
-          { "value": "10000", "label": "10 seconds" }
-        ],
-        "default": "7000"
-      },
-      {
-        "type": "select",
-        "id": "slideshow_height",
-        "label": "Section height",
-        "default": "small",
-        "options": [
-          {
-            "label": "Small",
-            "value": "small"
-          },
-          {
-            "label": "Medium",
-            "value": "medium"
-          },
-          {
-            "label": "Large",
-            "value": "large"
-          }
-        ]
-      },
-      {
-        "type": "select",
-        "id": "text_size",
-        "label": "Text size",
-        "default": "medium",
-        "options": [
-          {
-            "label": "Medium",
-            "value": "medium"
-          },
-          {
-            "label": "Large",
-            "value": "large"
-          }
-        ]
+        "label": "Change images every",
+        "default": 7,
+        "min": 5,
+        "max": 10,
+        "step": 1,
+        "unit": "s"
       }
     ],
     "blocks": [
       {
         "type": "image",
-        "name": "Image slide",
+        "name": "Slide",
         "settings": [
+          {
+            "type": "textarea",
+            "id": "title",
+            "label": "Heading",
+            "default": "Two line\nslide title."
+          },
+          {
+            "type": "range",
+            "id": "title_size",
+            "label": "Heading text size",
+            "default": 80,
+            "min": 40,
+            "max": 100,
+            "unit": "px"
+          },
+          {
+            "type": "text",
+            "id": "subheading",
+            "label": "Subheading",
+            "default": "And an optional subheading"
+          },
+          {
+            "type": "url",
+            "id": "link",
+            "label": "Slide link"
+          },
+          {
+            "type": "text",
+            "id": "link_text",
+            "label": "Slide link text",
+            "default": "Optional button"
+          },
+          {
+            "type": "select",
+            "id": "text_align",
+            "label": "Text alignment",
+            "default": "vertical-bottom horizontal-left",
+            "options": [
+              {
+                "value": "vertical-center horizontal-left",
+                "label": "Center left"
+              },
+              {
+                "value": "vertical-center horizontal-center",
+                "label": "Center"
+              },
+              {
+                "value": "vertical-center horizontal-right",
+                "label": "Center right"
+              },
+              {
+                "value": "vertical-bottom horizontal-left",
+                "label": "Bottom left"
+              },
+              {
+                "value": "vertical-bottom horizontal-center",
+                "label": "Bottom center"
+              },
+              {
+                "value": "vertical-bottom horizontal-right",
+                "label": "Bottom right"
+              }
+            ]
+          },
           {
             "type": "image_picker",
             "id": "image",
@@ -189,90 +307,48 @@
           },
           {
             "type": "select",
-            "id": "alignment",
-            "label": "Image alignment",
-            "default": "top",
+            "id": "focal_point",
+            "label": "Image focal point",
+            "info": "Used to keep the subject of your photo in view.",
+            "default": "center center",
             "options": [
               {
-                "value": "top",
-                "label": "Top"
+                "value": "top left",
+                "label": "Top left"
               },
               {
-                "value": "center",
-                "label": "Middle"
+                "value": "top center",
+                "label": "Top center"
               },
               {
-                "value": "bottom",
-                "label": "Bottom"
+                "value": "top right",
+                "label": "Top right"
+              },
+              {
+                "value": "center left",
+                "label": "Left"
+              },
+              {
+                "value": "center center",
+                "label": "Center"
+              },
+              {
+                "value": "center right",
+                "label": "Right"
+              },
+              {
+                "value": "bottom left",
+                "label": "Bottom left"
+              },
+              {
+                "value": "bottom center",
+                "label": "Bottom center"
+              },
+              {
+                "value": "bottom right",
+                "label": "Bottom right"
               }
             ]
-          },
-          {
-            "type": "text",
-            "id": "title",
-            "label": "Heading",
-            "default": "Image slide"
-          },
-          {
-            "type": "text",
-            "id": "subheading",
-            "label": "Subheading",
-            "default": "Tell your brand's story through video and images"
-          },
-          {
-            "type": "url",
-            "id": "link",
-            "label": "Slide link"
-          }
-        ]
-      },
-      {
-        "type": "video",
-        "name": "Video slide",
-        "settings": [
-          {
-            "type": "video_url",
-            "id": "video_url",
-            "label": "Video link",
-            "accept": ["youtube"],
-            "default": "https:\/\/www.youtube.com\/watch?v=_9VUPq3SxOc"
-          },
-          {
-            "type": "select",
-            "id": "video_type",
-            "label": "Style",
-            "options": [
-              {
-                "value": "chrome",
-                "label": "Image with play button"
-              },
-              {
-                "value": "background-chrome",
-                "label": "Background video with play button"
-              },
-              {
-                "value": "background",
-                "label": "Background video"
-              }
-            ]
-          },
-          {
-            "type": "image_picker",
-            "id": "image",
-            "label": "Image",
-            "info": "Fallback when autoplaying video is not supported on mobile devices"
-          },
-          {
-            "type": "text",
-            "id": "title",
-            "label": "Heading",
-            "default": "Video slide"
-          },
-          {
-            "type": "text",
-            "id": "subheading",
-            "label": "Subheading",
-            "default": "Tell your brand's story through video and images"
           }
         ]
       }
@@ -282,14 +358,22 @@
       "category": "Image",
       "settings": {
         "autoplay": true,
-        "autoplay_speed": "5000"
+        "autoplay_speed": 5
       },
       "blocks": [
         {
-          "type": "image"
+          "type": "image",
+          "settings": {
+            "title": "Endless\npossibilities.",
+            "subheading": "Bring your brand to life"
+          }
         },
         {
-          "type": "image"
+          "type": "image",
+          "settings": {
+            "title": "Two line\nslide titles.",
+            "subheading": "And big, beautiful imagery"
+          }
         }
       ]
     }]

@@ -1,313 +1,211 @@
-{% if section.settings.message %}
-  <style>
-    .notification-bar {
-      background-color: {{ section.settings.color_bg }};
-    }
+{%- assign main_menu = linklists[section.settings.main_menu_link_list] -%}
 
-    .notification-bar__message {
-      color: {{ section.settings.color_text }};
-    }
+{% include 'drawer-menu' %}
+{% include 'cart-drawer' %}
 
-    {% if section.settings.logo != blank %}
-      .site-header__logo-image {
-        max-width: {{ section.settings.logo_max_width | escape }}px;
-      }
-    {% endif %}
+{%- assign template_name = template | replace: '.', ' ' | truncatewords: 2, '' | handle -%}
 
-    {% if section.settings.align_logo == 'left' %}
-      .site-header__logo-image {
-        margin: 0;
-      }
-    {% endif %}
-  </style>
+{%- assign sticky_header = false -%}
+{% if section.settings.header_style == 'sticky' %}
+  {%- assign sticky_header = true -%}
+{% endif %}
+{%- assign overlay_header = false -%}
+{%- assign has_logo = false -%}
+{% if template_name == 'index' and section.settings.sticky_index %}
+  {%- assign overlay_header = true -%}
+{% endif %}
+{% if template_name == 'collection' and collection.image and section.settings.sticky_collection %}
+  {%- assign overlay_header = true -%}
 {% endif %}
 
-<div data-section-id="{{ section.id }}" data-section-type="header-section">
-  <nav class="mobile-nav-wrapper medium-up--hide" role="navigation">
-  <ul id="MobileNav" class="mobile-nav">
-    {% for link in linklists[section.settings.main_linklist].links %}
-      {%- assign outerLoopIndex = forloop.index -%}
+<style>
+  .site-nav__link {
+    font-size: {{ section.settings.type_navigation_size }}px;
+  }
+</style>
 
-      <li class="mobile-nav__item{% unless forloop.last %} border-bottom{% endunless %}">
-        {% if link.links != blank %}
-          {% capture child_list_handle %}{{ link.handle }}-{{ outerLoopIndex }}{% endcapture %}
-          <button type="button" class="btn--link js-toggle-submenu mobile-nav__link" data-target="{{ child_list_handle }}" data-level="1">
-            {{ link.title }}
-            <div class="mobile-nav__icon">
-              {% include 'icon-chevron-right' %}
-              <span class="icon__fallback-text">{{ 'layout.navigation.expand' | t }}</span>
-            </div>
-          </button>
-          <ul class="mobile-nav__dropdown" data-parent="{{ child_list_handle }}" data-level="2">
-            <li class="mobile-nav__item border-bottom">
-              <div class="mobile-nav__table">
-                <div class="mobile-nav__table-cell mobile-nav__return">
-                  <button class="btn--link js-toggle-submenu mobile-nav__return-btn" type="button">
-                    {% include 'icon-chevron-left' %}
-                    <span class="icon__fallback-text">{{ 'layout.navigation.collapse' | t }}</span>
+<div data-section-id="{{ section.id }}" data-section-type="header-section">
+  <div class="header-wrapper{% if overlay_header %} header-wrapper--sticky is-light{% endif %}">
+
+    {% if section.settings.show_announcement %}
+      {% include 'announcement-bar' %}
+    {% endif %}
+
+    <header class="site-header{%if section.settings.type_navigation_style %} site-header--heading-style{% endif %}" data-sticky="{{ sticky_header }}">
+      <div class="page-width">
+        <div class="header-layout header-layout--{{ section.settings.main_menu_alignment }}">
+          {% if section.settings.main_menu_alignment == 'center' %}
+            <div class="header-item">
+              <div class="site-nav medium-up--hide">
+                <div class="site-nav__item">
+                  <button type="button" class="site-nav__link site-nav__link--icon js-drawer-open-nav" aria-controls="NavDrawer">
+                    {% include 'icon-hamburger' %}
+                    <span class="icon__fallback-text">{{ 'general.drawers.navigation' | t }}</span>
                   </button>
                 </div>
-                <a href="{{ link.url }}" class="mobile-nav__sublist-link mobile-nav__sublist-header"{% if link.active %} aria-current="page"{% endif %}>
-                  {{ link.title }}
-                </a>
               </div>
-            </li>
-
-            {% for childlink in link.links %}
-              <li class="mobile-nav__item{% unless forloop.last %} border-bottom{% endunless %}">
-                {% if childlink.links != blank %}
-                  {% capture grandchild_list_handle %}{{ childlink.handle }}-{{ outerLoopIndex }}-{{ forloop.index }}{% endcapture %}
-                  <button type="button" class="btn--link js-toggle-submenu mobile-nav__link mobile-nav__sublist-link" data-target="{{ grandchild_list_handle }}">
-                    {{ childlink.title }}
-                    <div class="mobile-nav__icon">
-                      {% include 'icon-chevron-right' %}
-                      <span class="icon__fallback-text">{{ 'layout.navigation.expand' | t }}</span>
-                    </div>
-                  </button>
-                  <ul class="mobile-nav__dropdown" data-parent="{{ grandchild_list_handle }}" data-level="3">
-                    <li class="mobile-nav__item border-bottom">
-                      <div class="mobile-nav__table">
-                        <div class="mobile-nav__table-cell mobile-nav__return">
-                          <button type="button" class="btn--link js-toggle-submenu mobile-nav__return-btn" data-target="{{ child_list_handle }}">
-                            {% include 'icon-chevron-left' %}
-                            <span class="icon__fallback-text">{{ 'layout.navigation.collapse' | t }}</span>
-                          </button>
-                        </div>
-                        <a href="{{ childlink.url }}" class="mobile-nav__sublist-link mobile-nav__sublist-header"{% if childlink.active %} aria-current="page"{% endif %}>
-                          {{ childlink.title }}
-                        </a>
-                      </div>
-                    </li>
-                    {% for grandchildlink in childlink.links %}
-                      <li class="mobile-nav__item{% unless forloop.last %} border-bottom{% endunless %}">
-                        <a href="{{ grandchildlink.url }}" class="mobile-nav__sublist-link"{% if grandchildlink.active %} aria-current="page"{% endif %}>
-                          {{ grandchildlink.title | escape }}
-                        </a>
-                      </li>
-                    {% endfor %}
-                  </ul>
-                {% else %}
-                  <a href="{{ childlink.url }}" class="mobile-nav__sublist-link"{% if childlink.active %} aria-current="page"{% endif %}>
-                    {{ childlink.title | escape }}
-                  </a>
-                {% endif %}
-              </li>
-            {% endfor %}
-          </ul>
-        {% else %}
-          <a href="{{ link.url }}" class="mobile-nav__link"{% if link.active %} aria-current="page"{% endif %}>
-            {{ link.title }}
-          </a>
-        {% endif %}
-      </li>
-    {% endfor %}
-    {% if shop.customer_accounts_enabled %}
-      {% if customer %}
-        <li class="mobile-nav__item border-top">
-          <a href="/account" class="mobile-nav__link">{{ 'layout.customer.account' | t }}</a>
-        </li>
-      {% else %}
-        <li class="mobile-nav__item border-top">
-          <a href="/account/login" class="mobile-nav__link">{{ 'layout.customer.log_in' | t }}</a>
-        </li>
-      {% endif %}
-    {% endif %}
-  </ul>
-</nav>
-
-  {% if section.settings.message %}
-    {% if section.settings.home_page_only == false or template.name == 'index' %}
-      <style>
-        .announcement-bar {
-          background-color: {{ section.settings.color_bg }};
-        }
-
-        .announcement-bar--link:hover {
-          {% assign brightness = section.settings.color_bg | color_brightness %}
-
-          {% if brightness <= 192 %}
-            {% assign lightenAmount = 255 | minus: brightness | divided_by: 255 | times: 16 %}
-            background-color: {{ section.settings.color_bg | color_lighten: lightenAmount }};
-          {% else %}
-            {% assign darkenAmount = 255 | divided_by: brightness | times: 8 %}
-            background-color: {{ section.settings.color_bg | color_darken: darkenAmount }};
-          {% endif %}
-        }
-
-        .announcement-bar__message {
-          color: {{ section.settings.color_text }};
-        }
-      </style>
-
-      {% if section.settings.message_link == blank %}
-        <div class="announcement-bar">
-      {% else %}
-        <a href="{{ section.settings.message_link }}" class="announcement-bar announcement-bar--link">
-      {% endif %}
-
-        <p class="announcement-bar__message">{{ section.settings.message_text | escape }}</p>
-
-      {% if section.settings.message_link == blank %}
-        </div>
-      {% else %}
-        </a>
-      {% endif %}
-
-    {% endif %}
-  {% endif %}
-
-  <header class="site-header{% if section.settings.align_logo == 'left' %} border-bottom logo--left{% else %} logo--center{% endif %}" role="banner">
-    <div class="grid grid--no-gutters grid--table">
-      {% if section.settings.align_logo == 'center' %}
-        <div class="grid__item small--hide medium-up--one-third">
-          <div class="site-header__search">
-            {% include 'search-form' %}
-          </div>
-        </div>
-      {% endif %}
-
-      {% if section.settings.align_logo == 'center' %}
-        {%- assign logo_classes = 'medium-up--one-third logo-align--center' -%}
-      {% else %}
-        {%- assign logo_classes = 'medium-up--one-quarter logo-align--left' -%}
-      {% endif %}
-
-      <div class="grid__item small--one-half {{ logo_classes }}">
-        {% comment %}
-          Use the uploaded logo from theme settings if enabled.
-          Site name gets precedence with H1 tag on homepage, div on other pages.
-        {% endcomment %}
-        {% if template.name == 'index' %}
-          <h1 class="h2 site-header__logo" itemscope itemtype="http://schema.org/Organization">
-        {% else %}
-          <div class="h2 site-header__logo" itemscope itemtype="http://schema.org/Organization">
-        {% endif %}
-          {% if section.settings.logo %}
-            {%- assign img_url = section.settings.logo | img_url: '1x1' | replace: '_1x1.', '_{width}x.' -%}
-            <a href="/" itemprop="url" class="site-header__logo-image{% if section.settings.align_logo == 'center' %} site-header__logo-image--centered{% endif %}">
-              {% capture logo_alt %}{{ section.settings.logo.alt | default: shop.name }}{% endcapture %}
-              <img class="lazyload js"
-                   src="{{ section.settings.logo | img_url: '300x300' }}"
-                   data-src="{{ img_url }}"
-                   data-widths="[180, 360, 540, 720, 900, 1080, 1296, 1512, 1728, 2048]"
-                   data-aspectratio="{{ section.settings.logo.aspect_ratio }}"
-                   data-sizes="auto"
-                   alt="{{ logo_alt | escape }}"
-                   style="max-width: {{ section.settings.logo_max_width }}px">
-              <noscript>
-                {% capture image_size %}{{ section.settings.logo_max_width | escape }}x{% endcapture %}
-                <img src="{{ section.settings.logo | img_url: image_size }}"
-                     srcset="{{ section.settings.logo | img_url: image_size }} 1x, {{ section.settings.logo | img_url: image_size, scale: 2 }} 2x"
-                     alt="{{ section.settings.logo.alt | default: shop.name }}"
-                     itemprop="logo"
-                     style="max-width: {{ section.settings.logo_max_width }}px;">
-              </noscript>
-            </a>
-          {% else %}
-            <a class="site-header__logo-link" href="/" itemprop="url">{{ shop.name }}</a>
-          {% endif %}
-        {% if template.name == 'index' %}
-          </h1>
-        {% else %}
-          </div>
-        {% endif %}
-      </div>
-
-      {% if section.settings.align_logo == 'left' %}
-        <nav class="grid__item medium-up--one-half small--hide" id="AccessibleNav" role="navigation">
-          {% include 'site-nav' %}
-        </nav>
-      {% endif %}
-
-      <div class="grid__item small--one-half {% if section.settings.align_logo == 'left' %}medium-up--one-quarter{% else %}medium-up--one-third{% endif %} text-right site-header__icons{% if shop.customer_accounts_enabled %} site-header__icons--plus{% endif %}">
-        <div class="site-header__icons-wrapper">
-          {% if section.settings.align_logo == 'left' %}
-            <div class="site-header__search small--hide">
-              {% include 'search-form' %}
             </div>
           {% endif %}
+          <div class="header-item header-item--logo{% if section.settings.main_menu_alignment == 'center' %} text-center{%endif %}">
+            {% include 'header-logo-block' %}
 
-          <button type="button" class="btn--link site-header__search-toggle js-drawer-open-top medium-up--hide">
-            {% include 'icon-search' %}
-            <span class="icon__fallback-text">{{ 'layout.navigation.search' | t }}</span>
-          </button>
-
-          {% if shop.customer_accounts_enabled %}
-            {% if customer %}
-              <a href="/account" class="site-header__account">
-                {% include 'icon-login' %}
-                <span class="icon__fallback-text">{{ 'layout.customer.account' | t }}</span>
-              </a>
-            {% else %}
-              <a href="/account/login" class="site-header__account">
-                {% include 'icon-login' %}
-                <span class="icon__fallback-text">{{ 'layout.customer.log_in' | t }}</span>
-              </a>
+            {% if section.settings.main_menu_alignment == 'left' %}
+              {% include 'header-desktop-nav', compress: true %}
             {% endif %}
-          {% endif %}
+          </div>
+          <div class="header-item text-right">
+            <div class="site-nav">
 
-          <a href="/cart" class="site-header__cart">
-            {% include 'icon-cart' %}
-            <span class="visually-hidden">{{ 'layout.cart.title' | t }}</span>
-            <span class="icon__fallback-text">{{ 'layout.cart.title' | t }}</span>
-            {% if cart.item_count > 0 %}
-              <div id="CartCount" class="site-header__cart-count">
-                <span>{{ cart.item_count }}</span>
-                <span class="icon__fallback-text medium-up--hide">{{ 'layout.cart.items_count' | t: count: cart.item_count }}</span>
-              </div>
-            {% endif %}
-          </a>
+              {% if settings.enable_currencies %}
+                <div class="site-nav__item small--hide">
+                  {% include 'currency-picker', picker_id: 'header' %}
+                </div>
+              {% endif %}
 
-          {% unless linklists[section.settings.main_linklist] == blank %}
-            <button type="button" class="btn--link site-header__menu js-mobile-nav-toggle mobile-nav--open">
-              {% include 'icon-hamburger' %}
-              {% include 'icon-close' %}
-              <span class="icon__fallback-text">{{ 'layout.navigation.toggle' | t }}</span>
-            </button>
-          {% endunless %}
+              {% if shop.customer_accounts_enabled %}
+                <a class="site-nav__link site-nav__link--icon small--hide" href="/account">
+                  {% include 'icon-user' %}
+                  <span class="icon__fallback-text">
+                    {% if customer %}
+                      {{ 'layout.customer.account' | t }}
+                    {% else %}
+                      {{ 'layout.customer.log_in' | t }}
+                    {% endif %}
+                  </span>
+                </a>
+              {% endif %}
+
+              {% if section.settings.header_search_enable %}
+                <a href="/search" class="site-nav__link site-nav__link--icon js-search-header js-no-transition">
+                  {% include 'icon-search' %}
+                  <span class="icon__fallback-text">{{ 'general.search.title' | t }}</span>
+                </a>
+              {% endif %}
+
+              {% if section.settings.main_menu_alignment == 'left' %}
+                <button type="button" class="site-nav__link site-nav__link--icon site-nav--compress__menu js-drawer-open-nav" aria-controls="NavDrawer">
+                  {% include 'icon-hamburger' %}
+                  <span class="icon__fallback-text">{{ 'general.drawers.navigation' | t }}</span>
+                </button>
+              {% endif %}
+
+              <a href="/cart" class="site-nav__link site-nav__link--icon js-drawer-open-cart js-no-transition" aria-controls="CartDrawer">
+                <span class="cart-link">
+                  {% include 'icon-cart' %}
+                  <span class="icon__fallback-text">{{ 'layout.cart.title' | t }}</span>
+                  <span class="cart-link__bubble{% if cart.item_count > 0 %} cart-link__bubble--visible{% endif %}"></span>
+                </span>
+              </a>
+            </div>
+
+          </div>
         </div>
+        {% if section.settings.main_menu_alignment == 'center' %}
+          <div class="text-center">
+            {% include 'header-desktop-nav', compress: false %}
+          </div>
+        {% endif %}
 
       </div>
-    </div>
-  </header>
-
-  {% if section.settings.align_logo == 'center' %}
-  <nav class="small--hide border-bottom" id="AccessibleNav" role="navigation">
-    {% include 'site-nav', nav_alignment: 'site-nav--centered' %}
-  </nav>
-  {% endif %}
+      <div class="site-header__search-container">
+        <div class="site-header__search">
+          <div class="page-width">
+            <form action="/search" method="get" class="site-header__search-form" role="search">
+              {% comment %}<input type="hidden" name="type" value="product">{% endcomment %}
+              <button type="submit" class="text-link site-header__search-btn">
+                {% include 'icon-search' %}
+                <span class="icon__fallback-text">{{ 'general.search.submit' | t }}</span>
+              </button>
+              <input type="search" name="q" value="{{ search.terms | escape }}" placeholder="{{ 'general.search.placeholder' | t }}" class="site-header__search-input" aria-label="{{ 'general.search.placeholder' | t }}">
+            </form>
+            <button type="button" class="js-search-header-close text-link site-header__search-btn">
+              {% include 'icon-close' %}
+              <span class="icon__fallback-text">{{ 'general.accessibility.close_modal' | t | json }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+  </div>
 </div>
 
 {% schema %}
   {
-    "name": "Header",
+    "name": "Header and menus",
     "settings": [
       {
-        "type": "radio",
-        "id": "align_logo",
+        "type": "link_list",
+        "id": "main_menu_link_list",
+        "label": "Menu",
+        "default": "main-menu"
+      },
+      {
+        "type": "select",
+        "id": "main_menu_alignment",
         "label": "Logo alignment",
         "default": "left",
         "options": [
-          {"value": "left", "label": "Left"},
-          {"value": "center", "label": "Centered"}
+          {
+            "value": "left",
+            "label": "Left"
+          },
+          {
+            "value": "center",
+            "label": "Center"
+          }
         ]
       },
       {
-        "type": "image_picker",
-        "id": "logo",
-        "label": "Logo image"
+        "type": "select",
+        "id": "header_style",
+        "label": "Header style",
+        "default": "normal",
+        "options": [
+          {
+            "value": "normal",
+            "label": "Normal"
+          },
+          {
+            "value": "sticky",
+            "label": "Sticky"
+          }
+        ]
       },
       {
-        "type": "text",
-        "id": "logo_max_width",
-        "label": "Custom logo width (in pixels)",
-        "default": "100"
+        "type": "checkbox",
+        "id": "sticky_index",
+        "label": "Overlay header over homepage",
+        "default": false
       },
       {
-        "type": "link_list",
-        "id": "main_linklist",
-        "label": "Menu",
-        "default": "main-menu"
+        "type": "checkbox",
+        "id": "sticky_collection",
+        "label": "Overlay header over collection",
+        "info": "(if collection image is enabled)",
+        "default": false
+      },
+      {
+        "type": "checkbox",
+        "id": "header_search_enable",
+        "label": "Show search icon"
+      },
+      {
+        "type": "header",
+        "content": "Typography"
+      },
+      {
+        "type": "range",
+        "id": "type_navigation_size",
+        "label": "Text size",
+        "default": 18,
+        "min": 12,
+        "max": 40,
+        "unit": "px"
+      },
+      {
+        "type": "checkbox",
+        "id": "type_navigation_style",
+        "label": "Use heading font"
       },
       {
         "type": "header",
@@ -315,40 +213,62 @@
       },
       {
         "type": "checkbox",
-        "id": "message",
-        "label": "Show announcement",
-        "default": false
-      },
-      {
-        "type": "checkbox",
-        "id": "home_page_only",
-        "label": "Home page only",
-        "default": true
+        "id": "show_announcement",
+        "label": "Show an announcement"
       },
       {
         "type": "text",
-        "id": "message_text",
+        "id": "announcement_text",
         "label": "Announcement text",
-        "default": "Announce something here"
+        "default": "Free shipping and returns",
+        "info": "When closed, the announcement will remain closed until the next visit. Change the text to see it again."
       },
       {
         "type": "url",
-        "id": "message_link",
-        "label": "Announcement link",
-        "info": "Optional"
-      },
-      {
-        "type": "color",
-        "id": "color_bg",
-        "label": "Bar",
-        "default": "#7796a8"
-      },
-      {
-        "type": "color",
-        "id": "color_text",
-        "label": "Text",
-        "default": "#fff"
+        "id": "announcement_link",
+        "label": "Announcement link"
       }
-    ]
+    ],
+    "blocks": [
+      {
+        "type": "logo",
+        "name": "Logo",
+        "limit": 1,
+        "settings": [
+          {
+            "type": "image_picker",
+            "id": "logo",
+            "label": "Logo"
+          },
+          {
+            "type": "image_picker",
+            "id": "logo-inverted",
+            "label": "White logo",
+            "info": "Used when on top of an image"
+          },
+          {
+            "type": "range",
+            "id": "desktop_logo_height",
+            "label": "Desktop logo height",
+            "default": 50,
+            "min": 20,
+            "max": 120,
+            "unit": "px"
+          },
+          {
+            "type": "range",
+            "id": "mobile_logo_height",
+            "label": "Mobile logo height",
+            "default": 40,
+            "min": 20,
+            "max": 120,
+            "unit": "px"
+          }
+        ]
+      }
+    ],
+    "default": {
+      "settings": {}
+    }
   }
 {% endschema %}
